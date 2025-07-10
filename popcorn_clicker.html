@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Popcorn Clicker</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background-color: #fff8dc;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .header {
+      margin-top: 20px;
+      font-size: 30px;
+      user-select: none;
+      font-family: Impact, Charcoal, sans-serif;
+    }
+
+    .pps {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 20px;
+      user-select: none;
+    }
+
+    .popcorn {
+      font-size: 120px;
+      cursor: pointer;
+      margin-top: 50px;
+      transition: transform 0.1s;
+      user-select: none;
+    }
+
+    .popcorn:active {
+      transform: scale(0.95);
+    }
+
+    .particle {
+      position: absolute;
+      font-size: 32px;
+      pointer-events: none;
+      animation: pop 1s forwards;
+    }
+
+    @keyframes pop {
+      0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--x), var(--y)) scale(0.5);
+      }
+    }
+
+    .shop {
+      margin-top: 30px;
+      display: flex;
+      gap: 20px;
+    }
+
+    .upgrade {
+      background-color: #ffd700;
+      border: 2px solid #daa520;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+    }
+
+    .upgrade:hover {
+      background-color: #ffec8b;
+    }
+
+    .sidebar-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #ffa500;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    .sidebar {
+      position: fixed;
+      right: -300px;
+      top: 0;
+      width: 250px;
+      height: 100%;
+      background-color: #fffacd;
+      box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
+      padding: 20px;
+      transition: right 0.3s;
+      overflow-y: auto;
+      z-index: 1000;
+      word-wrap: break-word;
+    }
+
+    .sidebar.show {
+      right: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="pps" id="pps">Popped Corn per Second: 0</div>
+  <div class="header" id="counter">Popped Corn: 0</div>
+  <div class="popcorn" id="popcorn">🍿</div>
+
+  <div class="shop">
+    <div class="upgrade" onclick="buyUpgrade('multiplier', 50)">
+      <span style="font-size:24px;">📻</span>
+      Low Tier Microwave (+2/Click) - 50 🍿
+    </div>
+    <div class="upgrade" onclick="buyUpgrade('auto', 100)">
+      <span style="font-size:24px;">✨</span>
+      Low Tier Microwave Upgrade (+1/sec) - 100 🍿
+    </div>
+  </div>
+
+  <button class="sidebar-btn" onclick="toggleSidebar()">Upgrades Owned</button>
+
+  <div class="sidebar" id="sidebar"></div>
+
+  <audio
+    id="popSound1"
+    src="https://www.soundjay.com/buttons/sounds/button-16.mp3"
+  ></audio>
+  <audio
+    id="popSound2"
+    src="https://www.soundjay.com/buttons/sounds/button-20.mp3"
+  ></audio>
+  <audio
+    id="popSound3"
+    src="https://www.soundjay.com/buttons/sounds/button-37.mp3"
+  ></audio>
+  <audio
+    id="bgMusic"
+    src="https://www.bensound.com/bensound-music/bensound-funnysong.mp3"
+    loop
+    autoplay
+  ></audio>
+
+  <script>
+    let count = 0;
+    let multiplier = 1;
+    let autoPoppers = 0;
+
+    const counter = document.getElementById("counter");
+    const ppsDisplay = document.getElementById("pps");
+    const popcorn = document.getElementById("popcorn");
+    const sidebar = document.getElementById("sidebar");
+
+    const popSounds = [
+      document.getElementById("popSound1"),
+      document.getElementById("popSound2"),
+      document.getElementById("popSound3"),
+    ];
+
+    popcorn.addEventListener("click", () => {
+      addPopcorn(multiplier);
+      const sound = popSounds[Math.floor(Math.random() * popSounds.length)];
+      sound.currentTime = 0;
+      sound.play();
+      for (let i = 0; i < 7; i++) createPop();
+    });
+
+    function addPopcorn(amount) {
+      count += amount;
+      updateCounter();
+    }
+
+    function formatNumber(num) {
+      return num.toLocaleString();
+    }
+
+    function createPop() {
+      const pop = document.createElement("div");
+      pop.classList.add("particle");
+      pop.textContent = "🍿";
+
+      const startX = window.innerWidth / 2;
+      const startY = window.innerHeight / 2;
+
+      pop.style.left = `${startX}px`;
+      pop.style.top = `${startY}px`;
+
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 150 + Math.random() * 100;
+      const x = Math.cos(angle) * distance;
+      const y = Math.sin(angle) * distance;
+
+      pop.style.setProperty("--x", `${x}px`);
+      pop.style.setProperty("--y", `${y}px`);
+
+      document.body.appendChild(pop);
+
+      setTimeout(() => pop.remove(), 1000);
+    }
+
+    function buyUpgrade(type, cost) {
+      if (count < cost) return alert("Not enough popcorn!");
+      count -= cost;
+
+      if (type === "multiplier") {
+        multiplier++;
+      } else if (type === "auto") {
+        autoPoppers++;
+      }
+      updateCounter();
+    }
+
+    function updateCounter() {
+      counter.textContent = `Popped Corn: ${formatNumber(count)}`;
+      ppsDisplay.textContent = `Popped Corn per Second: ${formatNumber(
+        autoPoppers
+      )}`;
+    }
+
+    function toggleSidebar() {
+      sidebar.classList.toggle("show");
+      if (sidebar.classList.contains("show")) {
+        updateSidebar();
+      }
+    }
+
+    function updateSidebar() {
+      sidebar.innerHTML = "<h3>Your Upgrades:</h3>";
+      if (multiplier > 1)
+        sidebar.innerHTML += `<p>Low Tier Microwave: ${multiplier - 1}</p>`;
+      if (autoPoppers > 0)
+        sidebar.innerHTML += `<p>Microwave Upgrade: ${autoPoppers}</p>`;
+    }
+
+    setInterval(() => {
+      if (autoPoppers > 0) {
+        addPopcorn(autoPoppers);
+        for (let i = 0; i < autoPoppers; i++) createPop();
+      }
+    }, 1000);
+
+    // Start background music
+    const bgMusic = document.getElementById("bgMusic");
+    bgMusic.volume = 0.5;
+    bgMusic.play().catch(() => {
+      document.addEventListener(
+        "click",
+        () => bgMusic.play(),
+        { once: true }
+      );
+    });
+  </script>
+</body>
+</html>
