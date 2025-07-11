@@ -31,6 +31,14 @@
       user-select: none;
     }
 
+    .ppc {
+      position: absolute;
+      top: 50px;
+      left: 20px;
+      font-size: 20px;
+      user-select: none;
+    }
+
     .popcorn {
       font-size: 120px;
       cursor: pointer;
@@ -51,118 +59,176 @@
     }
 
     @keyframes pop {
-      0% {
-        opacity: 1;
-        transform: translate(0, 0) scale(1);
-      }
-      100% {
-        opacity: 0;
-        transform: translate(var(--x), var(--y)) scale(0.5);
-      }
+      0% { opacity: 1; transform: translate(0, 0) scale(1); }
+      100% { opacity: 0; transform: translate(var(--x), var(--y)) scale(0.5); }
     }
 
-    .shop {
-      margin-top: 30px;
-      display: flex;
-      gap: 20px;
+    .shop { 
+      margin-top: 30px; 
+      display: flex; 
+      gap: 20px; 
+      flex-wrap: wrap; 
+      max-width: 900px; 
+      justify-content: center; 
+    }
+    .upgrade { 
+      background-color: #ffd700; 
+      border: 2px solid #daa520; 
+      padding: 10px 20px; 
+      border-radius: 10px; 
+      cursor: pointer; 
+      user-select: none; 
+      transition: background-color 0.2s; 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+      font-size: 18px; 
+      min-width: 280px; 
+      justify-content: center; 
+    }
+    .upgrade:hover:not(.locked) { background-color: #ffec8b; }
+    .upgrade.locked { 
+      background-color: #bbb; 
+      border-color: #999; 
+      cursor: default; 
+      color: #666; 
+      pointer-events: none; 
     }
 
-    .upgrade {
-      background-color: #ffd700;
-      border: 2px solid #daa520;
-      padding: 10px 20px;
-      border-radius: 10px;
-      cursor: pointer;
+    .sidebar-btn { 
+      margin-top: 20px; 
+      padding: 10px 20px; 
+      background-color: #ffa500; 
+      border: none; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      font-size: 18px; 
       user-select: none;
-      transition: background-color 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 18px;
+      transition: background-color 0.3s, color 0.3s;
     }
 
-    .upgrade:hover {
-      background-color: #ffec8b;
+    .sidebar-btn.locked {
+      background-color: #bbb;
+      color: #666;
+      cursor: default;
+      pointer-events: none;
     }
 
-    .sidebar-btn {
-      margin-top: 20px;
-      padding: 10px 20px;
-      background-color: #ffa500;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 18px;
+    /* Sidebar for upgrades owned on the right */
+    .sidebar { 
+      position: fixed; 
+      right: -300px; 
+      top: 0; 
+      width: 250px; 
+      height: 100%; 
+      background-color: #fffacd; 
+      box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3); 
+      padding: 20px; 
+      transition: right 0.3s; 
+      overflow-y: auto; 
+      z-index: 1000; 
+      word-wrap: break-word; 
     }
+    .sidebar.show { right: 0; }
 
-    .sidebar {
+    /* New left sidebar for "Upgrades to Get" */
+    .left-sidebar {
       position: fixed;
-      right: -300px;
+      left: -300px;
       top: 0;
-      width: 250px;
+      width: 280px;
       height: 100%;
-      background-color: #fffacd;
-      box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
+      background-color: #ffe5b4; /* light orange */
+      box-shadow: 2px 0 5px rgba(0,0,0,0.3);
       padding: 20px;
-      transition: right 0.3s;
+      transition: left 0.3s, opacity 0.3s;
       overflow-y: auto;
       z-index: 1000;
       word-wrap: break-word;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .left-sidebar.show {
+      left: 0;
+      opacity: 1;
+      pointer-events: auto;
     }
 
-    .sidebar.show {
-      right: 0;
+    /* Scrollbar styling for sidebars */
+    .sidebar::-webkit-scrollbar,
+    .left-sidebar::-webkit-scrollbar {
+      width: 8px;
+    }
+    .sidebar::-webkit-scrollbar-thumb,
+    .left-sidebar::-webkit-scrollbar-thumb {
+      background-color: rgba(0,0,0,0.2);
+      border-radius: 4px;
     }
   </style>
 </head>
 <body>
-  <div class="pps" id="pps">Popped Corn per Second: 0</div>
+  <div class="pps" id="pps">Popcorn per Second: 0</div>
+  <div class="ppc" id="ppc">Popcorn per Click: 1</div>
   <div class="header" id="counter">Popped Corn: 0</div>
   <div class="popcorn" id="popcorn">🍿</div>
 
+  <!-- Original shop buttons -->
   <div class="shop">
-    <div class="upgrade" onclick="buyUpgrade('multiplier', 50)">
+    <div class="upgrade" id="upgrade-multiplier" onclick="buyUpgrade('multiplier', 50)">
       <span style="font-size:24px;">📻</span>
       Low Tier Microwave (+2/Click) - 50 🍿
     </div>
-    <div class="upgrade" onclick="buyUpgrade('auto', 100)">
+    <div class="upgrade" id="upgrade-auto" onclick="buyUpgrade('auto', 100)">
       <span style="font-size:24px;">✨</span>
       Low Tier Microwave Upgrade (+1/sec) - 100 🍿
     </div>
   </div>
 
-  <button class="sidebar-btn" onclick="toggleSidebar()">Upgrades Owned</button>
+  <!-- New Upgrades to Get button -->
+  <button id="btn-upgrades-to-get" class="sidebar-btn locked" title="Unlocks at 3 Popcorns / Second" >
+    🛒 Upgrades to Get (3 Popcorns / Second)
+  </button>
 
-  <div class="sidebar" id="sidebar"></div>
+  <!-- Right sidebar: Upgrades Owned -->
+  <button class="sidebar-btn" onclick="toggleOwnedSidebar()">Upgrades Owned</button>
+  <div class="sidebar" id="ownedSidebar"></div>
 
-  <audio
-    id="popSound1"
-    src="https://www.soundjay.com/buttons/sounds/button-16.mp3"
-  ></audio>
-  <audio
-    id="popSound2"
-    src="https://www.soundjay.com/buttons/sounds/button-20.mp3"
-  ></audio>
-  <audio
-    id="popSound3"
-    src="https://www.soundjay.com/buttons/sounds/button-37.mp3"
-  ></audio>
-  <audio
-    id="bgMusic"
-    src="https://www.bensound.com/bensound-music/bensound-funnysong.mp3"
-    loop
-    autoplay
-  ></audio>
+  <!-- Left sidebar: Upgrades To Get -->
+  <div class="left-sidebar" id="toGetSidebar">
+    <h3>Upgrades to Get</h3>
+    <div class="upgrade locked" id="upgrade-mid-microwave" onclick="buyUpgrade('midMultiplier', 500)">
+      <span style="font-size:24px;">🪔</span>
+      Mid-Tier Walmart Microwave (+10/Click) - 500 🍿
+    </div>
+    <div class="upgrade locked" id="upgrade-mid-auto" onclick="buyUpgrade('midAuto', 1000)">
+      <span style="font-size:24px;">💵</span>
+      Mid-Tier Walmart Microwave Upgrade (+10/sec) - 1000 🍿
+    </div>
+  </div>
+
+  <audio id="popSound1" src="https://www.soundjay.com/buttons/sounds/button-16.mp3"></audio>
+  <audio id="popSound2" src="https://www.soundjay.com/buttons/sounds/button-20.mp3"></audio>
+  <audio id="popSound3" src="https://www.soundjay.com/buttons/sounds/button-37.mp3"></audio>
+  <audio id="bgMusic" src="https://www.bensound.com/bensound-music/bensound-funnysong.mp3" loop autoplay></audio>
 
   <script>
     let count = 0;
     let multiplier = 1;
     let autoPoppers = 0;
+    let midMultiplierCount = 0;
+    let midAutoCount = 0;
 
     const counter = document.getElementById("counter");
     const ppsDisplay = document.getElementById("pps");
-    const popcorn = document.getElementById("popcorn");
-    const sidebar = document.getElementById("sidebar");
+    const ppcDisplay = document.getElementById("ppc");
+
+    const ownedSidebar = document.getElementById("ownedSidebar");
+    const toGetSidebar = document.getElementById("toGetSidebar");
+
+    const btnUpgradesToGet = document.getElementById("btn-upgrades-to-get");
+
+    const upgradeMidMicrowaveBtn = document.getElementById("upgrade-mid-microwave");
+    const upgradeMidAutoBtn = document.getElementById("upgrade-mid-auto");
 
     const popSounds = [
       document.getElementById("popSound1"),
@@ -170,23 +236,32 @@
       document.getElementById("popSound3"),
     ];
 
-    popcorn.addEventListener("click", () => {
-      addPopcorn(multiplier);
+    // Popcorn click handler
+    function popCorn() {
+      const clickGain = multiplier + midMultiplierCount * 10;
+      addPopcorn(clickGain);
+
       const sound = popSounds[Math.floor(Math.random() * popSounds.length)];
       sound.currentTime = 0;
       sound.play();
-      for (let i = 0; i < 7; i++) createPop();
-    });
 
+      for (let i = 0; i < 7; i++) createPop();
+    }
+
+    document.getElementById("popcorn").addEventListener("click", popCorn);
+
+    // Add popcorn amount and update display
     function addPopcorn(amount) {
       count += amount;
       updateCounter();
+      checkUnlocks();
     }
 
     function formatNumber(num) {
       return num.toLocaleString();
     }
 
+    // Create flying popcorn particles
     function createPop() {
       const pop = document.createElement("div");
       pop.classList.add("particle");
@@ -211,56 +286,130 @@
       setTimeout(() => pop.remove(), 1000);
     }
 
+    // Buy upgrades
     function buyUpgrade(type, cost) {
-      if (count < cost) return alert("Not enough popcorn!");
+      if (count < cost) {
+        alert("Not enough popcorn!");
+        return;
+      }
       count -= cost;
 
       if (type === "multiplier") {
-        multiplier++;
+        multiplier += 2;
       } else if (type === "auto") {
         autoPoppers++;
+      } else if (type === "midMultiplier") {
+        midMultiplierCount++;
+      } else if (type === "midAuto") {
+        midAutoCount++;
       }
       updateCounter();
+      updateOwnedSidebar();
+      checkUnlocks();
     }
 
+    // Update main counters
     function updateCounter() {
       counter.textContent = `Popped Corn: ${formatNumber(count)}`;
-      ppsDisplay.textContent = `Popped Corn per Second: ${formatNumber(
-        autoPoppers
-      )}`;
+      const totalPPS = autoPoppers + midAutoCount * 10;
+      ppsDisplay.textContent = `Popcorn per Second: ${formatNumber(totalPPS)}`;
+      const clickGain = multiplier + midMultiplierCount * 10;
+      ppcDisplay.textContent = `Popcorn per Click: ${formatNumber(clickGain)}`;
     }
 
-    function toggleSidebar() {
-      sidebar.classList.toggle("show");
-      if (sidebar.classList.contains("show")) {
-        updateSidebar();
+    // Unlock logic & button state changes
+    function checkUnlocks() {
+      const totalPPS = autoPoppers + midAutoCount * 10;
+
+      // Unlock "Upgrades to Get" button at 3 PCpS
+      if (totalPPS >= 3) {
+        btnUpgradesToGet.classList.remove("locked");
+        btnUpgradesToGet.title = "";
+        btnUpgradesToGet.style.pointerEvents = "auto";
+        btnUpgradesToGet.style.backgroundColor = "#ffa500";
+        btnUpgradesToGet.style.color = "black";
+      } else {
+        btnUpgradesToGet.classList.add("locked");
+        btnUpgradesToGet.title = "Unlocks at 3 Popcorns / Second";
+        btnUpgradesToGet.style.pointerEvents = "none";
+        btnUpgradesToGet.style.backgroundColor = "#bbb";
+        btnUpgradesToGet.style.color = "#666";
+        // Also close sidebar if open and locked again
+        if (toGetSidebar.classList.contains("show")) {
+          toGetSidebar.classList.remove("show");
+        }
       }
     }
 
-    function updateSidebar() {
-      sidebar.innerHTML = "<h3>Your Upgrades:</h3>";
-      if (multiplier > 1)
-        sidebar.innerHTML += `<p>Low Tier Microwave: ${multiplier - 1}</p>`;
-      if (autoPoppers > 0)
-        sidebar.innerHTML += `<p>Microwave Upgrade: ${autoPoppers}</p>`;
+    // Toggle Owned Upgrades sidebar (right)
+    function toggleOwnedSidebar() {
+      ownedSidebar.classList.toggle("show");
+      // Close left sidebar if open
+      if (toGetSidebar.classList.contains("show")) {
+        toGetSidebar.classList.remove("show");
+      }
+      if (ownedSidebar.classList.contains("show")) {
+        updateOwnedSidebar();
+      }
     }
 
+    // Toggle "Upgrades to Get" sidebar (left)
+    btnUpgradesToGet.addEventListener("click", () => {
+      toGetSidebar.classList.toggle("show");
+      // Close right sidebar if open
+      if (ownedSidebar.classList.contains("show")) {
+        ownedSidebar.classList.remove("show");
+      }
+      updateToGetSidebar();
+    });
+
+    // Update owned upgrades sidebar content
+    function updateOwnedSidebar() {
+      ownedSidebar.innerHTML = "<h3>Your Upgrades:</h3>";
+      if (multiplier > 1) ownedSidebar.innerHTML += `<p>Low Tier Microwave: ${multiplier - 1}</p>`;
+      if (autoPoppers > 0) ownedSidebar.innerHTML += `<p>Low Tier Microwave Upgrade: ${autoPoppers}</p>`;
+      if (midMultiplierCount > 0) ownedSidebar.innerHTML += `<p>Mid-Tier Walmart Microwave: ${midMultiplierCount}</p>`;
+      if (midAutoCount > 0) ownedSidebar.innerHTML += `<p>Mid-Tier Walmart Microwave Upgrade: ${midAutoCount}</p>`;
+      if (
+        multiplier === 1 &&
+        autoPoppers === 0 &&
+        midMultiplierCount === 0 &&
+        midAutoCount === 0
+      ) {
+        ownedSidebar.innerHTML += "<p>No upgrades purchased yet.</p>";
+      }
+    }
+
+    // Update "Upgrades to Get" sidebar content: unlock mid-tier upgrades buttons only when unlocked
+    function updateToGetSidebar() {
+      const totalPPS = autoPoppers + midAutoCount * 10;
+      if (totalPPS >= 3) {
+        upgradeMidMicrowaveBtn.classList.remove("locked");
+        upgradeMidAutoBtn.classList.remove("locked");
+      } else {
+        upgradeMidMicrowaveBtn.classList.add("locked");
+        upgradeMidAutoBtn.classList.add("locked");
+      }
+    }
+
+    // Automatic popcorn adding every second from auto upgrades
     setInterval(() => {
-      if (autoPoppers > 0) {
-        addPopcorn(autoPoppers);
-        for (let i = 0; i < autoPoppers; i++) createPop();
+      const totalPPS = autoPoppers + midAutoCount * 10;
+      if (totalPPS > 0) {
+        addPopcorn(totalPPS);
+        for (let i = 0; i < totalPPS; i++) createPop();
       }
     }, 1000);
 
-    // Start background music
+    // Initial setup
+    updateCounter();
+    checkUnlocks();
+
+    // Background music setup
     const bgMusic = document.getElementById("bgMusic");
     bgMusic.volume = 0.5;
     bgMusic.play().catch(() => {
-      document.addEventListener(
-        "click",
-        () => bgMusic.play(),
-        { once: true }
-      );
+      document.addEventListener("click", () => bgMusic.play(), { once: true });
     });
   </script>
 </body>
